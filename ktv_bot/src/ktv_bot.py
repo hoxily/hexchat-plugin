@@ -3,12 +3,14 @@ hexchat python 插件参考文档 https://hexchat.readthedocs.io/en/latest/scrip
 '''
 
 __module_name__ = "KTV_BOT"
-__module_version__ = "1.0"
+__module_version__ = "1.1"
 __module_description__ = "IRC自动点歌插件，用于 hexchat。"
 
 import hexchat
 import re
 import json
+
+PREFERENCE_KEY_TOGGLE = 'ktv_bot.toggle'
 
 '''
 接口文件。播放器会定时检测该文件内容，判断是否点播了新歌曲。
@@ -53,6 +55,9 @@ def process_message(msg):
 频道消息回调。
 '''
 def channel_message_callback(word, word_eol, userdata):
+	toggle = hexchat.get_pluginpref(PREFERENCE_KEY_TOGGLE)
+	if toggle != 'on':
+		return hexchat.EAT_NONE
 	# 如果对word里面有什么内容不清楚，可以把下方的注释去掉然后试运行一下。
 	#for i in range(len(word)):
 	#	print("prefix: " + word[i])
@@ -65,5 +70,26 @@ def channel_message_callback(word, word_eol, userdata):
 		notify(name)
 	return hexchat.EAT_NONE
 
+'''
+ktv_bot插件开关命令
+'''
+def ktv_bot_callback(word, word_eol, userdata):
+	toggle = hexchat.get_pluginpref(PREFERENCE_KEY_TOGGLE)
+	if toggle == 'on':
+		hexchat.set_pluginpref(PREFERENCE_KEY_TOGGLE, 'off')
+		print('已关闭ktv_bot插件功能。')
+	else:
+		hexchat.set_pluginpref(PREFERENCE_KEY_TOGGLE, 'on')
+		print('已启用ktv_bot插件功能。')
+	# /ktv_bot 命令只针对本插件有效
+	return hexchat.EAT_ALL
 # 注册 Channel Message 这种类型的消息事件
 hexchat.hook_print("Channel Message", channel_message_callback)
+# 注册 ktv_bot 命令
+hexchat.hook_command('ktv_bot', ktv_bot_callback, help='启用或者关闭ktv_bot插件功能')
+# 报告 ktv_bot 插件的当前启用状态
+toggle = hexchat.get_pluginpref(PREFERENCE_KEY_TOGGLE)
+if toggle == 'on':
+	print('ktv_bot插件功能处于开启状态。你可以使用 /ktv_bot 命令来关闭它。')
+else:
+	print('ktv_bot插件功能处于关闭状态。你可以使用 /ktv_bot 命令来打开它。')
